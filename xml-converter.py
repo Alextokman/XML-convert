@@ -231,24 +231,23 @@ class MainWindow(QMainWindow):
 
         try:
             cursor.execute("""CREATE TABLE "Waypoints" (
-	"WpId"	INTEGER NOT NULL UNIQUE,
-	"Name"	TEXT NOT NULL,
-	"ID"	TEXT NOT NULL,
-	"Region"	TEXT,
-	"Info"	TEXT,
-	"Type"	INTEGER,
-	"Pos"	TEXT NOT NULL,
-	"DrawFlag"	INTEGER,
-	"ColorSignIdx"	INTEGER,
-	"ColorNameIdx"	INTEGER,
-	"ColorIDIdx"	INTEGER,
-	"ShiftName"	TEXT,
-	"ShiftID"	TEXT,
-	"BeginDT"	TEXT,
-	"EndDT"	TEXT,
-	"LastDT"	TEXT,
-	PRIMARY KEY("WpId")
-)""")
+	           "WpId"	INTEGER NOT NULL UNIQUE,
+	           "Name"	TEXT NOT NULL,
+	           "ID"	TEXT NOT NULL,
+               "Region"	TEXT,
+               "Info"	TEXT,
+               "Type"	INTEGER,
+               "Pos"	TEXT NOT NULL,
+               "DrawFlag"	INTEGER,
+               "ColorSignIdx"	INTEGER,
+               "ColorNameIdx"	INTEGER,
+               "ColorIDIdx"	INTEGER,
+               "ShiftName"	TEXT,
+               "ShiftID"	TEXT,
+               "BeginDT"	TEXT,
+               "EndDT"	TEXT,
+               "LastDT"	TEXT,
+               PRIMARY KEY("WpId"))""")
             result = cursor.fetchall()
         except sqlite3.DatabaseError as err:
             print("Ошибка создания таблицы БД Waypoints:", err)
@@ -258,20 +257,19 @@ class MainWindow(QMainWindow):
 
         try:
             cursor.execute("""CREATE TABLE "Airways" (
-	"AwId"	INTEGER NOT NULL UNIQUE,
-	"Name"	TEXT,
-	"ID"	TEXT,
-	"Info"	NUMERIC,
-	"Type"	TEXT,
-	"RegionsB"	TEXT,
-	"RegionsE"	TEXT,
-	"ColorCenterLineIdx"	INTEGER,
-	"ColorBoundIdx"	INTEGER,
-	"BeginDT"	TEXT,
-	"EndDT"	TEXT,
-	"LastDT"	TEXT,
-	PRIMARY KEY("AwId")
-)""")
+                "AwId"	INTEGER NOT NULL UNIQUE,
+                "Name"	TEXT,
+                "ID"	TEXT,
+                "Info"	NUMERIC,
+                "Type"	TEXT,
+                "RegionsB"	TEXT,
+                "RegionsE"	TEXT,
+                "ColorCenterLineIdx"	INTEGER,
+                "ColorBoundIdx"	INTEGER,
+                "BeginDT"	TEXT,
+                "EndDT"	TEXT,
+                "LastDT"	TEXT,
+                PRIMARY KEY("AwId"))""")
             result = cursor.fetchall()
         except sqlite3.DatabaseError as err:
             print("Ошибка создания таблицы БД Airways:", err)
@@ -281,83 +279,118 @@ class MainWindow(QMainWindow):
 
         try:
             cursor.execute("""CREATE TABLE "AirwaysWP" (
-    "AwId"	INTEGER NOT NULL,
-    "WpNumber"	INTEGER NOT NULL,
-	"WpId"	INTEGER NOT NULL,
-	"Type"	INTEGER,
-	"Width"	INTEGER,
-	"ListFL"	TEXT,
-	"DrawFlag"	INTEGER,
-	"BoundPoint1"	INTEGER,
-	"BoundPoint2"	INTEGER,
-	"BoundPoint3"	INTEGER,
-	"BoundPoint4"	INTEGER,
-	"HandChanged"	INTEGER,
-	PRIMARY KEY("AwId","WpNumber","WpId")
-)""")
+                "AwId"	INTEGER NOT NULL,
+                "WpNumber"	INTEGER NOT NULL,
+                "WpId"	INTEGER NOT NULL,
+                "Type"	INTEGER,
+                "Width"	INTEGER,
+                "ListFL"	TEXT,
+                "DrawFlag"	INTEGER,
+                "BoundPoint1"	INTEGER,
+                "BoundPoint2"	INTEGER,
+                "BoundPoint3"	INTEGER,
+                "BoundPoint4"	INTEGER,
+                "HandChanged"	INTEGER,
+                PRIMARY KEY("AwId","WpNumber","WpId"))""")
             result = cursor.fetchall()
         except sqlite3.DatabaseError as err:
-            print("Ошибка создания таблицы БД Airways:", err)
+            print("Ошибка создания таблицы БД AirwaysWP:", err)
             raise
         else:
             db.commit()
 
         try:
             cursor.execute("""CREATE TABLE "FirUir" (
-    "FirId"	INTEGER NOT NULL,
-    "Name"	TEXT NOT NULL,
-	"ID"	TEXT NOT NULL,
-	"Info"	TEXT,
-	"Type"	TEXT,
-	"ListExBounds"	TEXT,
-	"ListTransferPointsIdx"	TEXT,
-	"Freq"	TEXT,
-	"DrawFlag"	TEXT,
-	"ColorLineIdx"	TEXT,
-	"ColorFillIdx"	TEXT,
-	"BeginDT"	TEXT,
-    "EndDT"	TEXT,
-    "LastDT"	TEXT,
-    "ListAirways"	TEXT,
-	PRIMARY KEY("FirId")
-)""")
+                "FirId"	INTEGER NOT NULL,
+                "Name"	TEXT NOT NULL,
+                "ID"	TEXT NOT NULL,
+                "Info"	TEXT,
+                "Type"	TEXT,
+                "ListExBounds"	TEXT,
+                "ListTransferPointsIdx"	TEXT,
+                "Freq"	TEXT,
+                "DrawFlag"	TEXT,
+                "ColorLineIdx"	TEXT,
+                "ColorFillIdx"	TEXT,
+                "BeginDT"	TEXT,
+                "EndDT"	TEXT,
+                "LastDT"	TEXT,
+                "ListAirways"	TEXT,
+                PRIMARY KEY("FirId"))""")
             result = cursor.fetchall()
         except sqlite3.DatabaseError as err:
-            print("Ошибка создания таблицы БД Airways:", err)
+            print("Ошибка создания таблицы БД FirUir:", err)
             raise
         else:
             db.commit()
 
         try:
             cursor.execute("""CREATE TABLE "Sectors" (
-    "FirId"	INTEGER NOT NULL,
-    "SectorNumber"	INTEGER NOT NULL,
-	"Hmin"	TEXT NOT NULL,
-	"Hmax"	TEXT,
-	PRIMARY KEY("FirId","SectorNumber")
-)""")
+                "FirId"	INTEGER NOT NULL,
+                "SectorNumber"	INTEGER NOT NULL,
+                "Hmin"	TEXT NOT NULL,
+                "Hmax"	TEXT,
+                PRIMARY KEY("FirId","SectorNumber"))""")
             result = cursor.fetchall()
         except sqlite3.DatabaseError as err:
-            print("Ошибка создания таблицы БД Airways:", err)
+            print("Ошибка создания таблицы БД Sectors:", err)
             raise
         else:
             db.commit()
 
         try:
             cursor.execute("""CREATE TABLE "SectorPoints" (
-    "FirId"	INTEGER NOT NULL,
-    "SectorNumber"	INTEGER NOT NULL,
-	"PointID"	INTEGER NOT NULL,
-	"Pos"	TEXT,
-    "DrawFlag"	TEXT,
-	PRIMARY KEY("FirId","SectorNumber","PointID")
-)""")
+                "FirId"	INTEGER NOT NULL,
+                "SectorNumber"	INTEGER NOT NULL,
+                "PointID"	INTEGER NOT NULL,
+                "Pos"	TEXT,
+                "DrawFlag"	TEXT,
+                PRIMARY KEY("FirId","SectorNumber","PointID"))""")
             result = cursor.fetchall()
         except sqlite3.DatabaseError as err:
-            print("Ошибка создания таблицы БД Airways:", err)
+            print("Ошибка создания таблицы БД SectorPoints:", err)
             raise
         else:
             db.commit()
+
+        try:
+            cursor.execute("""CREATE TABLE "Holdings" (
+                "HoldId"	INTEGER NOT NULL,
+                "Name"	TEXT NOT NULL,
+                "ID"	TEXT NOT NULL,
+                "Patterns"	TEXT,
+                "Programme"	TEXT,
+                "Info"	TEXT,
+                "Type"	TEXT,
+                "IndexWPT"	TEXT,
+                "Course"	TEXT,
+                "Radius"	TEXT,
+                "LPU"	TEXT,
+                "FLmin"	TEXT,
+                "FLmax"	TEXT,
+                "EnterPoint1"	TEXT,
+                "CenterPoint1"	TEXT,
+                "ExitPoint1"	TEXT,
+                "AngleStart1"	TEXT,
+                "AngleSweep1"	TEXT,
+                "EnterPoint2"	TEXT,
+                "CenterPoint2"	TEXT,
+                "ExitPoint2"	TEXT,
+                "AngleStart2"	TEXT,
+                "AngleSweep2"	TEXT,
+                "DrawFlag"	TEXT,
+                "ColorIdx"	TEXT,
+                "BeginDT"	TEXT,
+                "EndDT"	TEXT,
+                "LastDT"	TEXT,
+                PRIMARY KEY("HoldId"))""")
+            result = cursor.fetchall()
+        except sqlite3.DatabaseError as err:
+            print("Ошибка создания таблицы БД Holdings:", err)
+            raise
+        else:
+            db.commit()
+
 #Начинаем запись в БД из файла зоны
 
 #Собираем базовые параметры зоны в кортеж values
@@ -561,7 +594,26 @@ class MainWindow(QMainWindow):
                                     else:
                                         db.commit()
 
-
+#Собираем зоны ожидания и построчно записываем в БД
+        for tag in zone.findall('n'):
+            if tag.attrib['n'] == "ATC_STRUCTURE":
+                for tag1 in tag.findall('n'):
+                    if tag1.attrib['n'] == "HOLDING_AREAS":
+                        for tag2 in tag1.findall('n'):
+                            if tag2.attrib['n'] == "values":
+                                for tag3 in tag2.findall('n'):
+                                    values = []
+                                    values.append(tag3.attrib['n'].replace('r', ''))
+                                    for tag4 in tag3.findall('n'):
+                                        values.append(tag4.attrib['z'])
+                                    try:
+                                        cursor.execute("insert into Holdings values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? ,?, ? ,?, ?, ?)", values)
+                                        result = cursor.fetchall()
+                                    except sqlite3.DatabaseError as err:
+                                        print("Ошибка записи в таблицу БД Holdings:", err)
+                                        raise
+                                    else:
+                                        db.commit()
 
         db.close()
 
