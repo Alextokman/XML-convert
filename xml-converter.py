@@ -231,23 +231,23 @@ class MainWindow(QMainWindow):
 
         try:
             cursor.execute("""CREATE TABLE "Waypoints" (
-	"XmlId"	TEXT NOT NULL UNIQUE,
-	"Name"	INTEGER NOT NULL,
-	"ID"	INTEGER NOT NULL,
+	"WpId"	INTEGER NOT NULL UNIQUE,
+	"Name"	TEXT NOT NULL,
+	"ID"	TEXT NOT NULL,
 	"Region"	TEXT,
-	"Info"	INTEGER,
+	"Info"	TEXT,
 	"Type"	INTEGER,
 	"Pos"	TEXT NOT NULL,
 	"DrawFlag"	INTEGER,
 	"ColorSignIdx"	INTEGER,
 	"ColorNameIdx"	INTEGER,
 	"ColorIDIdx"	INTEGER,
-	"ShiftName"	INTEGER,
-	"ShiftID"	INTEGER,
+	"ShiftName"	TEXT,
+	"ShiftID"	TEXT,
 	"BeginDT"	TEXT,
 	"EndDT"	TEXT,
 	"LastDT"	TEXT,
-	PRIMARY KEY("XmlId")
+	PRIMARY KEY("WpId")
 )""")
             result = cursor.fetchall()
         except sqlite3.DatabaseError as err:
@@ -256,6 +256,108 @@ class MainWindow(QMainWindow):
         else:
             db.commit()
 
+        try:
+            cursor.execute("""CREATE TABLE "Airways" (
+	"AwId"	INTEGER NOT NULL UNIQUE,
+	"Name"	TEXT,
+	"ID"	TEXT,
+	"Info"	NUMERIC,
+	"Type"	TEXT,
+	"RegionsB"	TEXT,
+	"RegionsE"	TEXT,
+	"ColorCenterLineIdx"	INTEGER,
+	"ColorBoundIdx"	INTEGER,
+	"BeginDT"	TEXT,
+	"EndDT"	TEXT,
+	"LastDT"	TEXT,
+	PRIMARY KEY("AwId")
+)""")
+            result = cursor.fetchall()
+        except sqlite3.DatabaseError as err:
+            print("Ошибка создания таблицы БД Airways:", err)
+            raise
+        else:
+            db.commit()
+
+        try:
+            cursor.execute("""CREATE TABLE "AirwaysWP" (
+    "AwId"	INTEGER NOT NULL,
+    "WpNumber"	INTEGER NOT NULL,
+	"WpId"	INTEGER NOT NULL,
+	"Type"	INTEGER,
+	"Width"	INTEGER,
+	"ListFL"	TEXT,
+	"DrawFlag"	INTEGER,
+	"BoundPoint1"	INTEGER,
+	"BoundPoint2"	INTEGER,
+	"BoundPoint3"	INTEGER,
+	"BoundPoint4"	INTEGER,
+	"HandChanged"	INTEGER,
+	PRIMARY KEY("AwId","WpNumber","WpId")
+)""")
+            result = cursor.fetchall()
+        except sqlite3.DatabaseError as err:
+            print("Ошибка создания таблицы БД Airways:", err)
+            raise
+        else:
+            db.commit()
+
+        try:
+            cursor.execute("""CREATE TABLE "FirUir" (
+    "FirId"	INTEGER NOT NULL,
+    "Name"	TEXT NOT NULL,
+	"ID"	TEXT NOT NULL,
+	"Info"	TEXT,
+	"Type"	TEXT,
+	"ListExBounds"	TEXT,
+	"ListTransferPointsIdx"	TEXT,
+	"Freq"	TEXT,
+	"DrawFlag"	TEXT,
+	"ColorLineIdx"	TEXT,
+	"ColorFillIdx"	TEXT,
+	"BeginDT"	TEXT,
+    "EndDT"	TEXT,
+    "LastDT"	TEXT,
+    "ListAirways"	TEXT,
+	PRIMARY KEY("FirId")
+)""")
+            result = cursor.fetchall()
+        except sqlite3.DatabaseError as err:
+            print("Ошибка создания таблицы БД Airways:", err)
+            raise
+        else:
+            db.commit()
+
+        try:
+            cursor.execute("""CREATE TABLE "Sectors" (
+    "FirId"	INTEGER NOT NULL,
+    "SectorNumber"	INTEGER NOT NULL,
+	"Hmin"	TEXT NOT NULL,
+	"Hmax"	TEXT,
+	PRIMARY KEY("FirId","SectorNumber")
+)""")
+            result = cursor.fetchall()
+        except sqlite3.DatabaseError as err:
+            print("Ошибка создания таблицы БД Airways:", err)
+            raise
+        else:
+            db.commit()
+
+        try:
+            cursor.execute("""CREATE TABLE "SectorPoints" (
+    "FirId"	INTEGER NOT NULL,
+    "SectorNumber"	INTEGER NOT NULL,
+	"PointID"	INTEGER NOT NULL,
+	"Pos"	TEXT,
+    "DrawFlag"	TEXT,
+	PRIMARY KEY("FirId","SectorNumber","PointID")
+)""")
+            result = cursor.fetchall()
+        except sqlite3.DatabaseError as err:
+            print("Ошибка создания таблицы БД Airways:", err)
+            raise
+        else:
+            db.commit()
 #Начинаем запись в БД из файла зоны
 
 #Собираем базовые параметры зоны в кортеж values
@@ -289,6 +391,8 @@ class MainWindow(QMainWindow):
 
         values1 = []
         values2 = []
+
+
         for tag in zone.findall('n'):
             if tag.attrib['n'] == "THEME1":
                 for tag1 in tag.findall('n'):
@@ -348,9 +452,8 @@ class MainWindow(QMainWindow):
                             if tag2.attrib['n'] == "values":
                                 for tag3 in tag2.findall('n'):
                                     values = []
-                                    values.append(tag3.attrib['n'])
+                                    values.append(tag3.attrib['n'].replace('r', ''))
                                     for tag4 in tag3.findall('n'):
-#                                        print(tag4.attrib['n'] + tag4.attrib['z'])
                                         if tag4.attrib['n'] == "15":
                                             try:
                                                 cursor.execute("insert into Waypoints values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", values)
@@ -362,6 +465,101 @@ class MainWindow(QMainWindow):
                                                 db.commit()
                                         else:
                                             values.append(tag4.attrib['z'])
+
+#Собираем маршруты и построчно записываем в БД
+        for tag in zone.findall('n'):
+            if tag.attrib['n'] == "ATC_STRUCTURE":
+                for tag1 in tag.findall('n'):
+                    if tag1.attrib['n'] == "AIRWAYS":
+                        for tag2 in tag1.findall('n'):
+                            if tag2.attrib['n'] == "values":
+                                for tag3 in tag2.findall('n'):
+                                    values = []
+                                    values.append(tag3.attrib['n'].replace('r', ''))
+                                    for tag4 in tag3.findall('n'):
+                                        if tag4.attrib['n'] == "4":
+                                            for tag5 in tag4.findall('n'):
+                                                values1 = []
+                                                values1.append(values[0])
+                                                values1.append(tag5.attrib['n'].replace('r', ''))
+                                                for tag6 in tag5.findall('n'):
+                                                    try:
+                                                        values1.append(tag6.attrib['z'])
+                                                    except:
+                                                        values1.append('')
+
+                                                try:
+                                                    cursor.execute("insert into AirwaysWP values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", values1)
+                                                    result = cursor.fetchall()
+                                                except sqlite3.DatabaseError as err:
+                                                    print("Ошибка записи в таблицу БД AirwaysWP:", err)
+                                                    raise
+                                                else:
+                                                    db.commit()
+                                        elif tag4.attrib['n'] != "12":
+                                            values.append(tag4.attrib['z'])
+                                    try:
+                                        cursor.execute("insert into Airways values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", values)
+                                        result = cursor.fetchall()
+                                    except sqlite3.DatabaseError as err:
+                                        print("Ошибка записи в таблицу БД Airways:", err)
+                                        raise
+                                    else:
+                                        db.commit()
+
+#Собираем сектора и построчно записываем в БД
+        for tag in zone.findall('n'):
+            if tag.attrib['n'] == "ATC_STRUCTURE":
+                for tag1 in tag.findall('n'):
+                    if tag1.attrib['n'] == "FIR_UIR_AIRSPACES":
+                        for tag2 in tag1.findall('n'):
+                            if tag2.attrib['n'] == "values":
+                                for tag3 in tag2.findall('n'):
+                                    values = []
+                                    values.append(tag3.attrib['n'].replace('r', ''))
+                                    for tag4 in tag3.findall('n'):
+                                        if tag4.attrib['n'] == "4":
+                                            for tag5 in tag4.findall('n'):
+                                                values1 = []
+                                                values1.append(values[0])
+                                                values1.append(tag5.attrib['n'].replace('r', ''))
+                                                for tag6 in tag5.findall('n'):
+                                                    if tag6.attrib['n'] == "2":
+                                                        for tag7 in tag6.findall('n'):
+                                                            values2 = []
+                                                            values2.append(values1[0])
+                                                            values2.append(values1[1])
+                                                            values2.append(tag7.attrib['n'].replace('r', ''))
+                                                            for tag8 in tag7.findall('n'):
+                                                                values2.append(tag8.attrib['z'])
+                                                            try:
+                                                                cursor.execute("insert into SectorPoints values (?, ?, ?, ?, ?)", values2)
+                                                                result = cursor.fetchall()
+                                                            except sqlite3.DatabaseError as err:
+                                                                print("Ошибка записи в таблицу БД SectorPoints:", err)
+                                                                raise
+                                                            else:
+                                                                db.commit()
+                                                    else:
+                                                        values1.append(tag6.attrib['z'])
+                                                try:
+                                                    cursor.execute("insert into Sectors values (?, ?, ?, ?)", values1)
+                                                    result = cursor.fetchall()
+                                                except sqlite3.DatabaseError as err:
+                                                    print("Ошибка записи в таблицу БД Sectors:", err)
+                                                    raise
+                                                else:
+                                                    db.commit()
+                                        else:
+                                            values.append(tag4.attrib['z'])
+                                    try:
+                                        cursor.execute("insert into FirUir values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?,?,?)", values)
+                                        result = cursor.fetchall()
+                                    except sqlite3.DatabaseError as err:
+                                        print("Ошибка записи в таблицу БД FirUir:", err)
+                                        raise
+                                    else:
+                                        db.commit()
 
 
 
