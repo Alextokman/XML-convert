@@ -391,6 +391,49 @@ class MainWindow(QMainWindow):
         else:
             db.commit()
 
+        try:
+            cursor.execute("""CREATE TABLE "Routes" (
+                "RouteId"	INTEGER NOT NULL,
+                "Name"	TEXT NOT NULL,
+                "ID"	TEXT NOT NULL,
+                "Info"	TEXT,
+                "Type"	TEXT,
+                "Airports"	TEXT,
+                "DrawFlag"	TEXT,
+                "ColorIdx"	TEXT,
+                "BeginDT"	TEXT,
+                "EndDT"	TEXT,
+                "LastDT"	TEXT,
+                PRIMARY KEY("RouteId"))""")
+            result = cursor.fetchall()
+        except sqlite3.DatabaseError as err:
+            print("Ошибка создания таблицы БД Routes:", err)
+            raise
+        else:
+            db.commit()
+
+        try:
+            cursor.execute("""CREATE TABLE "RoutePoints" (
+                "RouteId"	INTEGER NOT NULL,
+                "WpId"	INTEGER NOT NULL,
+                "IndexWPT"	TEXT NOT NULL,
+                "Type"	TEXT NOT NULL,
+                "Radius"	TEXT,
+                "EnterPoint"	TEXT,
+                "CenterPoint"	TEXT,
+                "ExitPoint"	TEXT,
+                "AngleStart"	TEXT,
+                "AngleSweep"	TEXT,
+                "Hmin"	TEXT,
+                "Hmax"	TEXT,
+                PRIMARY KEY("RouteId","WpId"))""")
+            result = cursor.fetchall()
+        except sqlite3.DatabaseError as err:
+            print("Ошибка создания таблицы БД RoutePoints:", err)
+            raise
+        else:
+            db.commit()
+
 #Начинаем запись в БД из файла зоны
 
 #Собираем базовые параметры зоны в кортеж values
@@ -611,6 +654,43 @@ class MainWindow(QMainWindow):
                                         result = cursor.fetchall()
                                     except sqlite3.DatabaseError as err:
                                         print("Ошибка записи в таблицу БД Holdings:", err)
+                                        raise
+                                    else:
+                                        db.commit()
+
+#Собираем маршруты и построчно записываем в БД
+        for tag in zone.findall('n'):
+            if tag.attrib['n'] == "ATC_STRUCTURE":
+                for tag1 in tag.findall('n'):
+                    if tag1.attrib['n'] == "ROUTES":
+                        for tag2 in tag1.findall('n'):
+                            if tag2.attrib['n'] == "values":
+                                for tag3 in tag2.findall('n'):
+                                    values = []
+                                    values.append(tag3.attrib['n'].replace('r', ''))
+                                    for tag4 in tag3.findall('n'):
+                                        if tag4.attrib['n'] == "4":
+                                            for tag5 in tag4.findall('n'):
+                                                values1 = []
+                                                values1.append(values[0])
+                                                values1.append(tag5.attrib['n'].replace('r', ''))
+                                                for tag6 in tag5.findall('n'):
+                                                    values1.append(tag6.attrib['z'])
+                                                try:
+                                                    cursor.execute("insert into RoutePoints values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", values1)
+                                                    result = cursor.fetchall()
+                                                except sqlite3.DatabaseError as err:
+                                                    print("Ошибка записи в таблицу БД RoutePoints:", err)
+                                                    raise
+                                                else:
+                                                    db.commit()
+                                        else:
+                                            values.append(tag4.attrib['z'])
+                                    try:
+                                        cursor.execute("insert into Routes values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", values)
+                                        result = cursor.fetchall()
+                                    except sqlite3.DatabaseError as err:
+                                        print("Ошибка записи в таблицу БД Routes:", err)
                                         raise
                                     else:
                                         db.commit()
