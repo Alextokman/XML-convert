@@ -434,6 +434,43 @@ class MainWindow(QMainWindow):
         else:
             db.commit()
 
+        try:
+            cursor.execute("""CREATE TABLE "Restrictive" (
+                "RestId"	INTEGER NOT NULL,
+                "Name"	TEXT NOT NULL,
+                "ID"	INTEGER NOT NULL,
+                "Info"	TEXT NOT NULL,
+                "Type"	TEXT,
+                "Hmin"	TEXT,
+                "Hmax"	TEXT,
+                "DrawFlag"	TEXT,
+                "Transp"	TEXT,
+                "ColorLineIdx"	TEXT,
+                "ColorFillIdx"	TEXT,
+                "BeginDT"	TEXT,
+                "EndDT"	TEXT,
+                "LastDT"	TEXT,
+                PRIMARY KEY("RestId"))""")
+            result = cursor.fetchall()
+        except sqlite3.DatabaseError as err:
+            print("Ошибка создания таблицы БД Restrictive:", err)
+            raise
+        else:
+            db.commit()
+
+        try:
+            cursor.execute("""CREATE TABLE "RestPoints" (
+                "RestId"	INTEGER NOT NULL,
+                "PointId"	INTEGER NOT NULL,
+                "Pos"	TEXT NOT NULL,
+                PRIMARY KEY("RestId","PointId"))""")
+            result = cursor.fetchall()
+        except sqlite3.DatabaseError as err:
+            print("Ошибка создания таблицы БД RestPoints:", err)
+            raise
+        else:
+            db.commit()
+
 #Начинаем запись в БД из файла зоны
 
 #Собираем базовые параметры зоны в кортеж values
@@ -691,6 +728,43 @@ class MainWindow(QMainWindow):
                                         result = cursor.fetchall()
                                     except sqlite3.DatabaseError as err:
                                         print("Ошибка записи в таблицу БД Routes:", err)
+                                        raise
+                                    else:
+                                        db.commit()
+
+#Собираем зоны ограничений и построчно записываем в БД
+        for tag in zone.findall('n'):
+            if tag.attrib['n'] == "ATC_STRUCTURE":
+                for tag1 in tag.findall('n'):
+                    if tag1.attrib['n'] == "RESTRICTIVE_AIRSPACES":
+                        for tag2 in tag1.findall('n'):
+                            if tag2.attrib['n'] == "values":
+                                for tag3 in tag2.findall('n'):
+                                    values = []
+                                    values.append(tag3.attrib['n'].replace('r', ''))
+                                    for tag4 in tag3.findall('n'):
+                                        if tag4.attrib['n'] == "4":
+                                            for tag5 in tag4.findall('n'):
+                                                values1 = []
+                                                values1.append(values[0])
+                                                values1.append(tag5.attrib['n'].replace('r', ''))
+                                                for tag6 in tag5.findall('n'):
+                                                    values1.append(tag6.attrib['z'])
+                                                try:
+                                                    cursor.execute("insert into RestPoints values (?, ?, ?)", values1)
+                                                    result = cursor.fetchall()
+                                                except sqlite3.DatabaseError as err:
+                                                    print("Ошибка записи в таблицу БД RestPoints:", err)
+                                                    raise
+                                                else:
+                                                    db.commit()
+                                        else:
+                                            values.append(tag4.attrib['z'])
+                                    try:
+                                        cursor.execute("insert into Restrictive values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?,?,?)", values)
+                                        result = cursor.fetchall()
+                                    except sqlite3.DatabaseError as err:
+                                        print("Ошибка записи в таблицу БД Restrictive:", err)
                                         raise
                                     else:
                                         db.commit()
