@@ -152,7 +152,7 @@ class MainWindow(QMainWindow):
             raise
 
         try:
-            #Создаём нвый файл базы данных с именем файла зоны+текущие дата и время
+            #Создаём новый файл базы данных с именем файла зоны+текущие дата и время
             now = datetime.datetime.now()
             zone_name = os.path.basename(self.zonx_edit.text())
             zone_name = os.path.splitext(zone_name)[0]
@@ -194,8 +194,6 @@ class MainWindow(QMainWindow):
         except sqlite3.DatabaseError as err:
             print("Ошибка создания таблицы БД Zones:", err)
             raise
-        else:
-            db.commit()
 
         try:
             cursor.execute("""CREATE TABLE "Fonts" (
@@ -211,8 +209,6 @@ class MainWindow(QMainWindow):
         except sqlite3.DatabaseError as err:
             print("Ошибка создания таблицы БД Fonts:", err)
             raise
-        else:
-            db.commit()
 
         try:
             cursor.execute("""CREATE TABLE "Themes" (
@@ -226,8 +222,6 @@ class MainWindow(QMainWindow):
         except sqlite3.DatabaseError as err:
             print("Ошибка создания таблицы БД Themes:", err)
             raise
-        else:
-            db.commit()
 
         try:
             cursor.execute("""CREATE TABLE "Waypoints" (
@@ -252,8 +246,6 @@ class MainWindow(QMainWindow):
         except sqlite3.DatabaseError as err:
             print("Ошибка создания таблицы БД Waypoints:", err)
             raise
-        else:
-            db.commit()
 
         try:
             cursor.execute("""CREATE TABLE "Airways" (
@@ -269,13 +261,12 @@ class MainWindow(QMainWindow):
                 "BeginDT"	TEXT,
                 "EndDT"	TEXT,
                 "LastDT"	TEXT,
+                "Airports"	TEXT,
                 PRIMARY KEY("AwId"))""")
             result = cursor.fetchall()
         except sqlite3.DatabaseError as err:
             print("Ошибка создания таблицы БД Airways:", err)
             raise
-        else:
-            db.commit()
 
         try:
             cursor.execute("""CREATE TABLE "AirwaysWP" (
@@ -296,8 +287,6 @@ class MainWindow(QMainWindow):
         except sqlite3.DatabaseError as err:
             print("Ошибка создания таблицы БД AirwaysWP:", err)
             raise
-        else:
-            db.commit()
 
         try:
             cursor.execute("""CREATE TABLE "FirUir" (
@@ -321,8 +310,6 @@ class MainWindow(QMainWindow):
         except sqlite3.DatabaseError as err:
             print("Ошибка создания таблицы БД FirUir:", err)
             raise
-        else:
-            db.commit()
 
         try:
             cursor.execute("""CREATE TABLE "Sectors" (
@@ -335,8 +322,6 @@ class MainWindow(QMainWindow):
         except sqlite3.DatabaseError as err:
             print("Ошибка создания таблицы БД Sectors:", err)
             raise
-        else:
-            db.commit()
 
         try:
             cursor.execute("""CREATE TABLE "SectorPoints" (
@@ -350,8 +335,6 @@ class MainWindow(QMainWindow):
         except sqlite3.DatabaseError as err:
             print("Ошибка создания таблицы БД SectorPoints:", err)
             raise
-        else:
-            db.commit()
 
         try:
             cursor.execute("""CREATE TABLE "Holdings" (
@@ -388,8 +371,6 @@ class MainWindow(QMainWindow):
         except sqlite3.DatabaseError as err:
             print("Ошибка создания таблицы БД Holdings:", err)
             raise
-        else:
-            db.commit()
 
         try:
             cursor.execute("""CREATE TABLE "Routes" (
@@ -409,8 +390,6 @@ class MainWindow(QMainWindow):
         except sqlite3.DatabaseError as err:
             print("Ошибка создания таблицы БД Routes:", err)
             raise
-        else:
-            db.commit()
 
         try:
             cursor.execute("""CREATE TABLE "RoutePoints" (
@@ -431,8 +410,6 @@ class MainWindow(QMainWindow):
         except sqlite3.DatabaseError as err:
             print("Ошибка создания таблицы БД RoutePoints:", err)
             raise
-        else:
-            db.commit()
 
         try:
             cursor.execute("""CREATE TABLE "Restrictive" (
@@ -455,8 +432,6 @@ class MainWindow(QMainWindow):
         except sqlite3.DatabaseError as err:
             print("Ошибка создания таблицы БД Restrictive:", err)
             raise
-        else:
-            db.commit()
 
         try:
             cursor.execute("""CREATE TABLE "RestPoints" (
@@ -468,8 +443,30 @@ class MainWindow(QMainWindow):
         except sqlite3.DatabaseError as err:
             print("Ошибка создания таблицы БД RestPoints:", err)
             raise
-        else:
-            db.commit()
+
+        try:
+            cursor.execute("""CREATE TABLE "Airports" (
+                "AirportId"	INTEGER NOT NULL,
+                "Name"	TEXT NOT NULL,
+                "ID"	INTEGER NOT NULL,
+                "ExtraID"	TEXT NOT NULL,
+                "Info"	TEXT NOT NULL,
+                "Type"	TEXT,
+                "RefPoint"	TEXT,
+                "TransmitionLevel"	TEXT,
+                "AirportElevation"	TEXT,
+                "MagneticDeclination"	TEXT,
+                "BeginDT"	TEXT,
+                "EndDT"	TEXT,
+                "LastDT"	TEXT,
+                PRIMARY KEY("AirportId"))""")
+            result = cursor.fetchall()
+        except sqlite3.DatabaseError as err:
+            print("Ошибка создания таблицы БД Airports:", err)
+            raise
+
+
+        db.commit()
 
 #Начинаем запись в БД из файла зоны
 
@@ -484,7 +481,7 @@ class MainWindow(QMainWindow):
             if tag.attrib['n'] == "BASE_PARAMETER":
                 for tag1 in tag.findall('n'):
                     if tag1.attrib['n'] == "WorkRect":
-                        params = tag1.attrib['v'].split(',')
+                        params = tag1.attrib['v'].split(',') #разбиваем строку с рабочим квадратом на 4 отдельных параметра
                         for i in params:
                             values.append(i)
                     else:
@@ -497,8 +494,6 @@ class MainWindow(QMainWindow):
         except sqlite3.DatabaseError as err:
             print("Ошибка записи в таблицу БД Zones:", err)
             raise
-        else:
-            db.commit()
 
 #Собираем дневную тему Theme1, ночную тему Theme1 и шрифты
 
@@ -509,7 +504,7 @@ class MainWindow(QMainWindow):
         for tag in zone.findall('n'):
             if tag.attrib['n'] == "THEME1":
                 for tag1 in tag.findall('n'):
-                    if tag1.attrib['n'] != "FONT":
+                    if tag1.attrib['n'] != "FONT": #Собираем шрифты
                         values1.append(str(tag1.attrib['v']))
                     else:
                         for tag2 in tag1.findall('n'):
@@ -517,18 +512,15 @@ class MainWindow(QMainWindow):
                             values.append(tag2.attrib['n'])
                             for tag3 in tag2.findall('n'):
                                 values.append(tag3.attrib['v'])
-
                             try:
                                 cursor.execute("insert into Fonts values (?, '1', 'zone', ?, ?, ?, ?)", values)
                                 result = cursor.fetchall()
                             except sqlite3.DatabaseError as err:
                                 print("Ошибка записи в таблицу Fonts БД:", err)
                                 raise
-                            else:
-                                db.commit()
             elif tag.attrib['n'] == "THEME2":
                 for tag1 in tag.findall('n'):
-                    if tag1.attrib['n'] != "FONT":
+                    if tag1.attrib['n'] != "FONT":#Собираем шрифты
                         values2.append(str(tag1.attrib['v']))
                     else:
                         for tag2 in tag1.findall('n'):
@@ -536,16 +528,12 @@ class MainWindow(QMainWindow):
                             values.append(tag2.attrib['n'])
                             for tag3 in tag2.findall('n'):
                                 values.append(tag3.attrib['v'])
-
                             try:
                                 cursor.execute("insert into Fonts values (?, '2', 'zone', ?, ?, ?, ?)", values)
                                 result = cursor.fetchall()
                             except sqlite3.DatabaseError as err:
                                 print("Ошибка записи в таблицу Fonts БД:", err)
                                 raise
-                            else:
-                                db.commit()
-
         try:
             cursor.execute("insert into Themes values ('zone', '1', ?, ?, ?)", values1)
             cursor.execute("insert into Themes values ('zone', '2', ?, ?, ?)", values2)
@@ -553,21 +541,20 @@ class MainWindow(QMainWindow):
         except sqlite3.DatabaseError as err:
             print("Ошибка записи в таблицу Themes БД:", err)
             raise
-        else:
-            db.commit()
+        db.commit()
 
-#Собираем точки и построчно записываем в БД
+
         for tag in zone.findall('n'):
-            if tag.attrib['n'] == "ATC_STRUCTURE":
+            if tag.attrib['n'] == "ATC_STRUCTURE":#Собираем ветку ATC_STRUCTURE
                 for tag1 in tag.findall('n'):
-                    if tag1.attrib['n'] == "WAYPOINTS":
+                    if tag1.attrib['n'] == "WAYPOINTS":#Собираем точки и построчно записываем в БД
                         for tag2 in tag1.findall('n'):
                             if tag2.attrib['n'] == "values":
                                 for tag3 in tag2.findall('n'):
                                     values = []
                                     values.append(tag3.attrib['n'].replace('r', ''))
                                     for tag4 in tag3.findall('n'):
-                                        if tag4.attrib['n'] == "15":
+                                        if tag4.attrib['n'] == "15":#Пропускаем 15 параметр, в нём нет атрибута z
                                             try:
                                                 cursor.execute("insert into Waypoints values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", values)
                                                 result = cursor.fetchall()
@@ -579,18 +566,14 @@ class MainWindow(QMainWindow):
                                         else:
                                             values.append(tag4.attrib['z'])
 
-#Собираем маршруты и построчно записываем в БД
-        for tag in zone.findall('n'):
-            if tag.attrib['n'] == "ATC_STRUCTURE":
-                for tag1 in tag.findall('n'):
-                    if tag1.attrib['n'] == "AIRWAYS":
+                    elif tag1.attrib['n'] == "AIRWAYS":#Собираем маршруты и построчно записываем в БД
                         for tag2 in tag1.findall('n'):
                             if tag2.attrib['n'] == "values":
                                 for tag3 in tag2.findall('n'):
                                     values = []
                                     values.append(tag3.attrib['n'].replace('r', ''))
                                     for tag4 in tag3.findall('n'):
-                                        if tag4.attrib['n'] == "4":
+                                        if tag4.attrib['n'] == "4": #Собираем точки маршрутов
                                             for tag5 in tag4.findall('n'):
                                                 values1 = []
                                                 values1.append(values[0])
@@ -599,8 +582,7 @@ class MainWindow(QMainWindow):
                                                     try:
                                                         values1.append(tag6.attrib['z'])
                                                     except:
-                                                        values1.append('')
-
+                                                        values1.append('')#Если в теге нет атрибута z, в БД добавляем пустое занчение
                                                 try:
                                                     cursor.execute("insert into AirwaysWP values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", values1)
                                                     result = cursor.fetchall()
@@ -609,35 +591,30 @@ class MainWindow(QMainWindow):
                                                     raise
                                                 else:
                                                     db.commit()
-                                        elif tag4.attrib['n'] != "12":
+                                        else:
                                             values.append(tag4.attrib['z'])
                                     try:
-                                        cursor.execute("insert into Airways values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", values)
+                                        cursor.execute("insert into Airways values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", values)
                                         result = cursor.fetchall()
                                     except sqlite3.DatabaseError as err:
                                         print("Ошибка записи в таблицу БД Airways:", err)
                                         raise
                                     else:
                                         db.commit()
-
-#Собираем сектора и построчно записываем в БД
-        for tag in zone.findall('n'):
-            if tag.attrib['n'] == "ATC_STRUCTURE":
-                for tag1 in tag.findall('n'):
-                    if tag1.attrib['n'] == "FIR_UIR_AIRSPACES":
+                    elif tag1.attrib['n'] == "FIR_UIR_AIRSPACES":#Собираем сектора и построчно записываем в БД
                         for tag2 in tag1.findall('n'):
                             if tag2.attrib['n'] == "values":
                                 for tag3 in tag2.findall('n'):
                                     values = []
                                     values.append(tag3.attrib['n'].replace('r', ''))
                                     for tag4 in tag3.findall('n'):
-                                        if tag4.attrib['n'] == "4":
+                                        if tag4.attrib['n'] == "4":#Собираем области секторов
                                             for tag5 in tag4.findall('n'):
                                                 values1 = []
                                                 values1.append(values[0])
                                                 values1.append(tag5.attrib['n'].replace('r', ''))
                                                 for tag6 in tag5.findall('n'):
-                                                    if tag6.attrib['n'] == "2":
+                                                    if tag6.attrib['n'] == "2":#Собираем точки областей
                                                         for tag7 in tag6.findall('n'):
                                                             values2 = []
                                                             values2.append(values1[0])
@@ -673,12 +650,7 @@ class MainWindow(QMainWindow):
                                         raise
                                     else:
                                         db.commit()
-
-#Собираем зоны ожидания и построчно записываем в БД
-        for tag in zone.findall('n'):
-            if tag.attrib['n'] == "ATC_STRUCTURE":
-                for tag1 in tag.findall('n'):
-                    if tag1.attrib['n'] == "HOLDING_AREAS":
+                    elif tag1.attrib['n'] == "HOLDING_AREAS":#Собираем зоны ожидания и построчно записываем в БД
                         for tag2 in tag1.findall('n'):
                             if tag2.attrib['n'] == "values":
                                 for tag3 in tag2.findall('n'):
@@ -694,19 +666,14 @@ class MainWindow(QMainWindow):
                                         raise
                                     else:
                                         db.commit()
-
-#Собираем маршруты и построчно записываем в БД
-        for tag in zone.findall('n'):
-            if tag.attrib['n'] == "ATC_STRUCTURE":
-                for tag1 in tag.findall('n'):
-                    if tag1.attrib['n'] == "ROUTES":
+                    elif tag1.attrib['n'] == "ROUTES":#Собираем маршруты и построчно записываем в БД
                         for tag2 in tag1.findall('n'):
                             if tag2.attrib['n'] == "values":
                                 for tag3 in tag2.findall('n'):
                                     values = []
                                     values.append(tag3.attrib['n'].replace('r', ''))
                                     for tag4 in tag3.findall('n'):
-                                        if tag4.attrib['n'] == "4":
+                                        if tag4.attrib['n'] == "4":#Собираем маршрутные точки
                                             for tag5 in tag4.findall('n'):
                                                 values1 = []
                                                 values1.append(values[0])
@@ -731,19 +698,14 @@ class MainWindow(QMainWindow):
                                         raise
                                     else:
                                         db.commit()
-
-#Собираем зоны ограничений и построчно записываем в БД
-        for tag in zone.findall('n'):
-            if tag.attrib['n'] == "ATC_STRUCTURE":
-                for tag1 in tag.findall('n'):
-                    if tag1.attrib['n'] == "RESTRICTIVE_AIRSPACES":
+                    elif tag1.attrib['n'] == "RESTRICTIVE_AIRSPACES":#Собираем зоны ограничений и построчно записываем в БД
                         for tag2 in tag1.findall('n'):
                             if tag2.attrib['n'] == "values":
                                 for tag3 in tag2.findall('n'):
                                     values = []
                                     values.append(tag3.attrib['n'].replace('r', ''))
                                     for tag4 in tag3.findall('n'):
-                                        if tag4.attrib['n'] == "4":
+                                        if tag4.attrib['n'] == "4":#Собираем точки зон ограничений
                                             for tag5 in tag4.findall('n'):
                                                 values1 = []
                                                 values1.append(values[0])
@@ -768,6 +730,32 @@ class MainWindow(QMainWindow):
                                         raise
                                     else:
                                         db.commit()
+
+                    db.commit()
+            elif tag.attrib['n'] == "AIRPORTS":
+                for tag1 in tag.findall('n'):
+                    values = []
+                    values.append(tag1.attrib['n'])
+                    for tag2 in tag1.findall('n'):
+                        if tag2.attrib['n'] == "RUNWAYS":
+                            print('')
+                        elif tag2.attrib['n'] == 'OBSTACLES':
+                            print('')
+                        elif tag2.attrib['n'] == 'RESTRICTIVE_BEARINGS':
+                            print('')
+                        elif tag2.attrib['n'] == 'PATTERNS':
+                            print('')
+                        else:
+                            values.append(tag2.attrib['v'])
+                    try:
+                        cursor.execute("insert into Airports values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", values)
+                        result = cursor.fetchall()
+                    except sqlite3.DatabaseError as err:
+                        print("Ошибка записи в таблицу БД Airports:", err)
+                        raise
+
+
+                db.commit()
 
         db.close()
 
