@@ -558,7 +558,7 @@ class MainWindow(QMainWindow):
         values = []
         params = []
         datetoday = datetime.date.today()
-        values.append(zone_name)
+        values.append(str(zone_name))
         values.append(datetoday)
 
         for tag in zone.findall('n'):
@@ -881,7 +881,7 @@ class MainWindow(QMainWindow):
     def ZonxToDB(self):
         print("DB")
 
-#Эеспорт БД в файл .zonx_btn
+#Экспорт БД в файл .zonx_btn
     def DBToZonx(self):
 
         #Делаем красивую табуляцию и переоды строки
@@ -956,11 +956,40 @@ class MainWindow(QMainWindow):
         n3.set('n',"MagneticDeclinationEnable")
         n3.set('v',str(result[14]))
 
-        n2 = ET.SubElement(zone, 'n')
-        n2.set('n',"THEME1")
-
-        n2 = ET.SubElement(zone, 'n')
-        n2.set('n',"THEME2")
+        for i in [1,2]:
+            print(i)
+            n2 = ET.SubElement(zone, 'n')
+            n2.set('n',"THEME"+str(i))
+            cursor.execute("""SELECT * from Themes WHERE ThemeMode = ? """, (i,))
+            row = cursor.fetchone()
+            n3 = ET.SubElement(n2, 'n')
+            n3.set('n',"ListPaletteID")
+            n3.set('v',row[2])
+            n3 = ET.SubElement(n2, 'n')
+            n3.set('n',"ListPointtypeID")
+            n3.set('v',row[3])
+            n3 = ET.SubElement(n2, 'n')
+            n3.set('n',"ListLinetypeID")
+            n3.set('v',row[4])
+            n3 = ET.SubElement(n2, 'n')
+            n3.set('n',"FONT")
+            cursor.execute("""SELECT * from Fonts WHERE ThemeID = ? """, (i,))
+            records = cursor.fetchall()
+            for row in records:
+                n4 = ET.SubElement(n3, 'n')
+                n4.set('n', str(row[0]))
+                n5 = ET.SubElement(n4, 'n')
+                n5.set('n', "FontName")
+                n5.set('v', row[3])
+                n5 = ET.SubElement(n4, 'n')
+                n5.set('n', "FontSize")
+                n5.set('v', str(row[4]))
+                n5 = ET.SubElement(n4, 'n')
+                n5.set('n', "FontBold")
+                n5.set('v', str(row[5]))
+                n5 = ET.SubElement(n4, 'n')
+                n5.set('n', "FontItalic")
+                n5.set('v', str(row[6]))
 
         n2 = ET.SubElement(zone, 'n')
         n2.set('n',"ATC_STRUCTURE")
@@ -980,6 +1009,7 @@ class MainWindow(QMainWindow):
 
         tree.write(zone_filename + ".zonx", encoding="windows-1251", xml_declaration=True)
 
+        cursor.close()
         db.close()
 
 
