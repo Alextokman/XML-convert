@@ -248,6 +248,18 @@ class MainWindow(QMainWindow):
             raise
 
         try:
+            cursor.execute("""CREATE TABLE "WaypointRunways" (
+	           "WpId"	INTEGER NOT NULL,
+	           "WpRunwayId"	INTEGER NOT NULL,
+	           "AirportId"	TEXT NOT NULL,
+               "RunwayId"	TEXT,
+               PRIMARY KEY("WpId","WpRunwayId"))""")
+            result = cursor.fetchall()
+        except sqlite3.DatabaseError as err:
+            print("Ошибка создания таблицы БД WaypointRunways:", err)
+            raise
+
+        try:
             cursor.execute("""CREATE TABLE "Airways" (
                 "AwId"	INTEGER NOT NULL UNIQUE,
                 "Name"	TEXT,
@@ -636,15 +648,27 @@ class MainWindow(QMainWindow):
                                     values = []
                                     values.append(tag3.attrib['n'].replace('r', ''))
                                     for tag4 in tag3.findall('n'):
-                                        if tag4.attrib['n'] == "15":#Пропускаем 15 параметр, в нём нет атрибута z
-                                            try:
-                                                cursor.execute("insert into Waypoints values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", values)
-                                                result = cursor.fetchall()
-                                            except sqlite3.DatabaseError as err:
-                                                print("Ошибка записи в таблицу БД Waypoints:", err)
-                                                raise
+                                        if tag4.attrib['n'] == "15":
+                                            for tag5 in tag4.findall('n'):
+                                                values1 = []
+                                                values1.append(values[0])
+                                                values1.append(tag5.attrib['n'].replace('r', ''))
+                                                for tag6 in tag5.findall('n'):
+                                                    values1.append(tag6.attrib['z'])
+                                                try:
+                                                    cursor.execute("insert into WaypointRunways values (?, ?, ?, ?)", values1)
+                                                    result = cursor.fetchall()
+                                                except sqlite3.DatabaseError as err:
+                                                    print("Ошибка записи в таблицу БД WaypointRunways:", err)
+                                                    raise
                                         else:
                                             values.append(tag4.attrib['z'])
+                                    try:
+                                        cursor.execute("insert into Waypoints values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", values)
+                                        result = cursor.fetchall()
+                                    except sqlite3.DatabaseError as err:
+                                        print("Ошибка записи в таблицу БД Waypoints:", err)
+                                        raise
                     elif tag1.attrib['n'] == "AIRWAYS":#Собираем маршруты и построчно записываем в БД
                         for tag2 in tag1.findall('n'):
                             if tag2.attrib['n'] == "values":
@@ -905,6 +929,7 @@ class MainWindow(QMainWindow):
         try:
             db = sqlite3.connect(db_filename)
             cursor = db.cursor()
+            cursor1 = db.cursor()
         except:
             print("Не удаётся открыть БД", err)
             raise
@@ -957,7 +982,6 @@ class MainWindow(QMainWindow):
         n3.set('v',str(result[14]))
 
         for i in [1,2]:
-            print(i)
             n2 = ET.SubElement(zone, 'n')
             n2.set('n',"THEME"+str(i))
             cursor.execute("""SELECT * from Themes WHERE ThemeMode = ? """, (i,))
@@ -993,6 +1017,72 @@ class MainWindow(QMainWindow):
 
         n2 = ET.SubElement(zone, 'n')
         n2.set('n',"ATC_STRUCTURE")
+        n3 = ET.SubElement(n2, 'n')
+        n3.set('n',"WAYPOINTS")
+        n3.set('t',"table")
+        n4 = ET.SubElement(n3, 'n')
+        n4.set('n',"geometry")
+        n5 = ET.SubElement(n4, 'n')
+        n5.set('n',"Name")
+        n5 = ET.SubElement(n4, 'n')
+        n5.set('n',"ID")
+        n5 = ET.SubElement(n4, 'n')
+        n5.set('n',"Region")
+        n5 = ET.SubElement(n4, 'n')
+        n5.set('n',"Info")
+        n5 = ET.SubElement(n4, 'n')
+        n5.set('n',"Type")
+        n5 = ET.SubElement(n4, 'n')
+        n5.set('n',"Pos")
+        n5 = ET.SubElement(n4, 'n')
+        n5.set('n',"DrawFlag")
+        n5 = ET.SubElement(n4, 'n')
+        n5.set('n',"ColorSignIdx")
+        n5 = ET.SubElement(n4, 'n')
+        n5.set('n',"ColorNameIdx")
+        n5 = ET.SubElement(n4, 'n')
+        n5.set('n',"ColorIDIdx")
+        n5 = ET.SubElement(n4, 'n')
+        n5.set('n',"ShiftName")
+        n5 = ET.SubElement(n4, 'n')
+        n5.set('n',"ShiftID")
+        n5 = ET.SubElement(n4, 'n')
+        n5.set('n',"BeginDT")
+        n5 = ET.SubElement(n4, 'n')
+        n5.set('n',"EndDT")
+        n5 = ET.SubElement(n4, 'n')
+        n5.set('n',"LastDT")
+        n5 = ET.SubElement(n4, 'n')
+        n5.set('n',"RUNWAYS")
+        n6 = ET.SubElement(n5, 'n')
+        n6.set('n',"AirportID")
+        n6 = ET.SubElement(n5, 'n')
+        n6.set('n',"RunwayID")
+        n4 = ET.SubElement(n3, 'n')
+        n4.set('n',"values")
+        cursor.execute("""SELECT * from Waypoints""")
+        records = cursor.fetchall()
+        for row in records:
+            n5 = ET.SubElement(n4, 'n')
+            n5.set('n',"r" + str(row[0]))
+            for i in range(0, 16):
+                n6 = ET.SubElement(n5, 'n')
+                n6.set('n', str(i))
+                if i != 15:
+                    n6.set('z', str(row[i+1]))
+                elif i == 15:
+                    cursor.execute("""SELECT * from WaypointRunways WHERE WpId = ?""", (row[0],))
+                    records1 = cursor.fetchall()
+                    print(records1)
+                    for row1 in records1:
+                        n7 = ET.SubElement(n6, 'n')
+                        n7.set('n', "r" + str(row1[1]))
+                        n8 = ET.SubElement(n7, 'n')
+                        n8.set('n', "0")
+                        n8.set('z', str(row1[2]))
+                        n8 = ET.SubElement(n7, 'n')
+                        n8.set('n', "1")
+                        n8.set('z', str(row1[3]))
 
         n2 = ET.SubElement(zone, 'n')
         n2.set('n',"AIRPORTS")
