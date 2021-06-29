@@ -933,7 +933,7 @@ class MainWindow(QMainWindow):
         except:
             print("Не удаётся открыть БД", err)
             raise
-
+#Выгружаем базовые параметры зоны
         zone = ET.Element('n')
         zone.set('ver','1.1')
 
@@ -980,7 +980,7 @@ class MainWindow(QMainWindow):
         n3 = ET.SubElement(n2,'n')
         n3.set('n',"MagneticDeclinationEnable")
         n3.set('v',str(result[14]))
-
+#Выгружаем стили
         for i in [1,2]:
             n2 = ET.SubElement(zone, 'n')
             n2.set('n',"THEME"+str(i))
@@ -1014,7 +1014,7 @@ class MainWindow(QMainWindow):
                 n5 = ET.SubElement(n4, 'n')
                 n5.set('n', "FontItalic")
                 n5.set('v', str(row[6]))
-
+#Выгружаем точки
         n2 = ET.SubElement(zone, 'n')
         n2.set('n',"ATC_STRUCTURE")
         n3 = ET.SubElement(n2, 'n')
@@ -1065,15 +1065,14 @@ class MainWindow(QMainWindow):
         for row in records:
             n5 = ET.SubElement(n4, 'n')
             n5.set('n',"r" + str(row[0]))
-            for i in range(0, 16):
+            for i in range(len(row)):
                 n6 = ET.SubElement(n5, 'n')
                 n6.set('n', str(i))
                 if i != 15:
                     n6.set('z', str(row[i+1]))
-                elif i == 15:
+                elif i == 15: #Выгружаем привязку точек к аэродромам и курсам
                     cursor.execute("""SELECT * from WaypointRunways WHERE WpId = ?""", (row[0],))
                     records1 = cursor.fetchall()
-                    print(records1)
                     for row1 in records1:
                         n7 = ET.SubElement(n6, 'n')
                         n7.set('n', "r" + str(row1[1]))
@@ -1083,6 +1082,99 @@ class MainWindow(QMainWindow):
                         n8 = ET.SubElement(n7, 'n')
                         n8.set('n', "1")
                         n8.set('z', str(row1[3]))
+
+        n3 = ET.SubElement(n2, 'n')
+        n3.set('n',"AIRWAYS")
+        n3.set('t',"table")
+        n4 = ET.SubElement(n3, 'n')
+        n4.set('n',"geometry")
+        n5 = ET.SubElement(n4, 'n')
+        n5.set('n',"Name")
+        n5 = ET.SubElement(n4, 'n')
+        n5.set('n',"ID")
+        n5 = ET.SubElement(n4, 'n')
+        n5.set('n',"Info")
+        n5 = ET.SubElement(n4, 'n')
+        n5.set('n',"Type")
+        n5 = ET.SubElement(n4, 'n')
+        n5.set('n',"POINTS")
+        n6 = ET.SubElement(n5, 'n')
+        n6.set('n',"IndexWPT")
+        n6 = ET.SubElement(n5, 'n')
+        n6.set('n',"Type")
+        n6 = ET.SubElement(n5, 'n')
+        n6.set('n',"Width")
+        n6 = ET.SubElement(n5, 'n')
+        n6.set('n',"ListFL")
+        n6 = ET.SubElement(n5, 'n')
+        n6.set('n',"DrawFlag")
+        n6 = ET.SubElement(n5, 'n')
+        n6.set('n',"BoundPoint1")
+        n6 = ET.SubElement(n5, 'n')
+        n6.set('n',"BoundPoint2")
+        n6 = ET.SubElement(n5, 'n')
+        n6.set('n',"BoundPoint3")
+        n6 = ET.SubElement(n5, 'n')
+        n6.set('n',"BoundPoint4")
+        n6 = ET.SubElement(n5, 'n')
+        n6.set('n',"HandChanged")
+        n5 = ET.SubElement(n4, 'n')
+        n5.set('n',"RegionsB")
+        n5 = ET.SubElement(n4, 'n')
+        n5.set('n',"RegionsE")
+        n5 = ET.SubElement(n4, 'n')
+        n5.set('n',"ColorCenterLineIdx")
+        n5 = ET.SubElement(n4, 'n')
+        n5.set('n',"ColorBoundIdx")
+        n5 = ET.SubElement(n4, 'n')
+        n5.set('n',"BeginDT")
+        n5 = ET.SubElement(n4, 'n')
+        n5.set('n',"EndDT")
+        n5 = ET.SubElement(n4, 'n')
+        n5.set('n',"LastDT")
+        n5 = ET.SubElement(n4, 'n')
+        n5.set('n',"Airports")
+        n4 = ET.SubElement(n3, 'n')
+        n4.set('n',"values")
+        cursor.execute("""SELECT * from Airways""")
+        records = cursor.fetchall()
+        for row in records:
+            n5 = ET.SubElement(n4, 'n')
+            n5.set('n',"r" + str(row[0]))
+            for i in range(len(row)):
+                n6 = ET.SubElement(n5, 'n')
+                n6.set('n', str(i))
+                if i < 4:
+                    n6.set('z', str(row[i+1]))
+                elif i == 4:
+                    cursor.execute("""SELECT * from AirwaysWP WHERE AwId = ?""", (row[0],))
+                    records1 = cursor.fetchall()
+                    for row1 in records1:
+                        n7 = ET.SubElement(n6, 'n')
+                        n7.set('n', "r" + str(row1[1]))
+                        for j in range(len(row1) - 2):
+                            n8 = ET.SubElement(n7, 'n')
+                            n8.set('n', str(j))
+                            if row1[j+2] != '':
+                                n8.set('z', str(row1[j+2]))
+                elif i > 4:
+                    n6.set('z', str(row[i]))
+
+        n3 = ET.SubElement(n2, 'n')
+        n3.set('n',"FIR_UIR_AIRSPACES")
+        n3.set('t',"table")
+
+        n3 = ET.SubElement(n2, 'n')
+        n3.set('n',"HOLDING_AREAS")
+        n3.set('t',"table")
+
+        n3 = ET.SubElement(n2, 'n')
+        n3.set('n',"ROUTES")
+        n3.set('t',"table")
+
+        n3 = ET.SubElement(n2, 'n')
+        n3.set('n',"RESTRICTIVE_AIRSPACES")
+        n3.set('t',"table")
 
         n2 = ET.SubElement(zone, 'n')
         n2.set('n',"AIRPORTS")
