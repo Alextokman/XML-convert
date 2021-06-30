@@ -130,9 +130,13 @@ class MainWindow(QMainWindow):
 
 #Обработка события открытия файла зоны
     def openZonx(self):
-        fname = QFileDialog.getOpenFileName(self, 'Открыть zonx', os.getcwd()) [0]
+        fname = QFileDialog.getOpenFileName(self, 'Открыть zonx', os.getcwd(), "*.zonx") [0]
         self.zonx_edit.setText(fname)
-        f = open(fname, "r")
+        try:
+            f = open(fname, "r")
+        except:
+            QMessageBox.critical(self, "Ошибка ", "Не выбран zonx файл!", QMessageBox.Ok)
+            return
 
         with f:
             data = f.read()
@@ -140,7 +144,12 @@ class MainWindow(QMainWindow):
 
 #Обработка события открытия базы данных
     def openDB(self):
-        fname = QFileDialog.getOpenFileName(self, 'Открыть БД', os.getcwd()) [0]
+        try:
+            fname = QFileDialog.getOpenFileName(self, 'Открыть БД', os.getcwd(), "*.db") [0]
+        except:
+            QMessageBox.critical(self, "Ошибка ", "Не выбран файл БД!", QMessageBox.Ok)
+            return
+
         self.db_edit.setText(fname)
 
 #Создание новой базы данных и заливка в неё файла зоны
@@ -148,8 +157,8 @@ class MainWindow(QMainWindow):
         try:
             zone = ET.parse(self.zonx_edit.text()).getroot()
         except:
-            print("Не выбран zonx файл")
-            raise
+            QMessageBox.critical(self, "Ошибка ", "Не выбран zonx файл!", QMessageBox.Ok)
+            return
 
         try:
             #Создаём новый файл базы данных с именем файла зоны+текущие дата и время
@@ -160,8 +169,8 @@ class MainWindow(QMainWindow):
             db_file = open(db_filename, "w+")
             db_file.close()
         except:
-            print("Не могу создать файл БД", err)
-            raise
+            QMessageBox.critical(self, "Ошибка ", "Не могу создать файл БД!", QMessageBox.Ok)
+            return
 
         try:
             db = sqlite3.connect(db_filename)
@@ -926,13 +935,16 @@ class MainWindow(QMainWindow):
 
         db_filename = self.db_edit.text()
 
+        if not(os.path.isfile(db_filename)):
+            QMessageBox.critical(self, "Ошибка ", "Не удаётся найти файл БД", QMessageBox.Ok)
+            return
+
         try:
             db = sqlite3.connect(db_filename)
             cursor = db.cursor()
-            cursor1 = db.cursor()
         except:
-            print("Не удаётся открыть БД", err)
-            raise
+            QMessageBox.critical(self, "Ошибка ", "Не удаётся подключиться к БД", QMessageBox.Ok)
+            return
 #Выгружаем базовые параметры зоны
         zone = ET.Element('n')
         zone.set('ver','1.1')
