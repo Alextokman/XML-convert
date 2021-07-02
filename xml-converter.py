@@ -157,67 +157,63 @@ class MainWindow(QMainWindow):
         else:
             event.ignore()
 
-    #Делаем красивую табуляцию и переоды строки
-    def xml_tabulation(elem, level=0):
-        i = "\n" + level*"\t"
-        if len(elem):
-            if not elem.text or not elem.text.strip():
-                elem.text = i + "\t"
-            if not elem.tail or not elem.tail.strip():
-                elem.tail = i
-            for elem in elem:
-                xml_tabulation(elem, level+1)
-            if not elem.tail or not elem.tail.strip():
-                elem.tail = i
-        else:
-            if level and (not elem.tail or not elem.tail.strip()):
-                elem.tail = i
-
 #Обработка события открытия файла зоны
     def openZonx(self):
+        self.statusBar().showMessage('Загрузка zonx файла...')
         fname = QFileDialog.getOpenFileName(self, 'Открыть файл zonx', os.getcwd(), "*.zonx") [0]
         self.zonx_edit.setText(fname)
         try:
             f = open(fname, "r")
         except:
             QMessageBox.critical(self, "Ошибка ", "Не выбран zonx файл!", QMessageBox.Ok)
+            self.statusBar().showMessage('Готово')
             return
 
         with f:
             data = f.read()
             self.xml_text.setText(data)
+        self.statusBar().showMessage('Готово')
 
 #Обработка события открытия файла зоны
     def openXml(self):
+        self.statusBar().showMessage('Загрузка xml файла...')
         fname = QFileDialog.getOpenFileName(self, 'Открыть файл xml', os.getcwd()) [0]
         self.xml_edit.setText(fname)
         try:
             f = open(fname, "r")
         except:
             QMessageBox.critical(self, "Ошибка ", "Не выбран xml файл!", QMessageBox.Ok)
+            self.statusBar().showMessage('Готово')
             return
 
         with f:
             data = f.read()
-
             self.xml_text.setText(data)
+        self.statusBar().showMessage('Готово')
 
 #Обработка события открытия базы данных
     def openDB(self):
+        self.statusBar().showMessage('Загрузка базы данных...')
         try:
             fname = QFileDialog.getOpenFileName(self, 'Открыть БД', os.getcwd(), "*.db") [0]
         except:
             QMessageBox.critical(self, "Ошибка ", "Не выбран файл БД!", QMessageBox.Ok)
+            self.statusBar().showMessage('Готово')
             return
 
         self.db_edit.setText(fname)
+        self.statusBar().showMessage('Готово')
 
 #Создание новой базы данных и заливка в неё файла зоны
     def ZonxToNewDB(self):
+
+        self.statusBar().showMessage('Загрузка zonx в базу данных...')
+
         try:
             zone = ET.parse(self.zonx_edit.text()).getroot()
         except:
             QMessageBox.critical(self, "Ошибка ", "Не выбран zonx файл!", QMessageBox.Ok)
+            self.statusBar().showMessage('Готово')
             return
 
         try:
@@ -230,12 +226,14 @@ class MainWindow(QMainWindow):
             db_file.close()
         except:
             QMessageBox.critical(self, "Ошибка ", "Не могу создать файл БД!", QMessageBox.Ok)
+            self.statusBar().showMessage('Готово')
             return
 
         try:
             db = sqlite3.connect(db_filename)
         except:
             print("Не могу соединиться с БД", err)
+            self.statusBar().showMessage('Готово')
             raise
 
         cursor = db.cursor()
@@ -970,17 +968,37 @@ class MainWindow(QMainWindow):
 
         self.db_edit.setText(db_filename)
 
+        self.statusBar().showMessage('Готово')
+
 #Импорт файла зоны в существующую базу данных
     def ZonxToDB(self):
         print("DB")
 
 #Экспорт БД в файл .zonx_btn
     def DBToZonx(self):
+        self.statusBar().showMessage('Выгрузка zonx из базы данных...')
+
+        #Делаем красивую табуляцию и переоды строки
+        def xml_tabulation(elem, level=0):
+            i = "\n" + level*"\t"
+            if len(elem):
+                if not elem.text or not elem.text.strip():
+                    elem.text = i + "\t"
+                if not elem.tail or not elem.tail.strip():
+                    elem.tail = i
+                for elem in elem:
+                    xml_tabulation(elem, level+1)
+                if not elem.tail or not elem.tail.strip():
+                    elem.tail = i
+            else:
+                if level and (not elem.tail or not elem.tail.strip()):
+                    elem.tail = i
 
         db_filename = self.db_edit.text()
 
         if not(os.path.isfile(db_filename)):
             QMessageBox.critical(self, "Ошибка ", "Не удаётся найти файл БД", QMessageBox.Ok)
+            self.statusBar().showMessage('Готово')
             return
 
         try:
@@ -988,6 +1006,7 @@ class MainWindow(QMainWindow):
             cursor = db.cursor()
         except:
             QMessageBox.critical(self, "Ошибка ", "Не удаётся подключиться к БД", QMessageBox.Ok)
+            self.statusBar().showMessage('Готово')
             return
 #Выгружаем базовые параметры зоны
         zone = ET.Element('n')
@@ -1776,7 +1795,7 @@ class MainWindow(QMainWindow):
 
         tree = ET.ElementTree(zone)
 
-        self.xml_tabulation(zone)
+        xml_tabulation(zone)
 
         zone_filename = os.path.splitext(db_filename)[0]
 
@@ -1784,8 +1803,8 @@ class MainWindow(QMainWindow):
 
         cursor.close()
         db.close()
-
-
+        QMessageBox.information(self, "Информация ", "База данных успешно выгружена в файл " + zone_filename + ".zonx", QMessageBox.Ok)
+        self.statusBar().showMessage('Готово')
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
