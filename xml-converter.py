@@ -22,10 +22,20 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage('Готово')
 
 #Описываем триггеры
-        openZonx = QAction(QIcon('open.png'), '&Открыть zonx...', self)
+        openZonx = QAction(QIcon('open.png'), '&Открыть файл zonx...', self)
         openZonx.setShortcut('Ctrl+O')
         openZonx.setStatusTip('Открыть файл')
         openZonx.triggered.connect(self.openZonx)
+
+        openXml = QAction(QIcon('open.png'), '&Открыть файл xml...', self)
+        openXml.setShortcut('Ctrl+X')
+        openXml.setStatusTip('Открыть файл')
+        openXml.triggered.connect(self.openXml)
+
+        openDB = QAction(QIcon('database.png'), '&Открыть файл БД...', self)
+        openDB.setShortcut('Ctrl+D')
+        openDB.setStatusTip('Открыть файл')
+        openDB.triggered.connect(self.openDB)
 
         exitAction = QAction(QIcon('exit.png'), '&Выход', self)
         exitAction.setShortcut('Ctrl+Q')
@@ -36,11 +46,13 @@ class MainWindow(QMainWindow):
         menubar = self.menuBar()
         fileMenu = menubar.addMenu('&File')
         fileMenu.addAction(openZonx)
+        fileMenu.addAction(openDB)
         fileMenu.addAction(exitAction)
 
 #Собираем тулбар
         self.toolbar = self.addToolBar('Выход')
         self.toolbar.addAction(openZonx)
+        self.toolbar.addAction(openDB)
         self.toolbar.addAction(exitAction)
 
 #Создаём элементы главного окна
@@ -52,11 +64,21 @@ class MainWindow(QMainWindow):
         zonx_btn.clicked.connect(self.openZonx)
         zonx_btn.resize(zonx_btn.sizeHint())
 
-        self.zonx_text = QTextEdit()
+        xml_label = QLabel('Выберите файл .xml', self.centralWidget)
+        self.xml_edit = QLineEdit()
+        xml_btn = QPushButton('...', self.centralWidget)
+        xml_btn.clicked.connect(self.openXml)
+        xml_btn.resize(xml_btn.sizeHint())
+
+        self.xml_text = QTextEdit()
 
         zonxtodb_btn = QPushButton('Импорт в новую БД', self.centralWidget)
         zonxtodb_btn.clicked.connect(self.ZonxToNewDB)
         zonxtodb_btn.resize(zonxtodb_btn.sizeHint())
+
+        xml_tab_btn = QPushButton('Красивая табуляция', self.centralWidget)
+#        xml_tab_btn.clicked.connect(self.xml_tabulation(self.xml_text.toPlainText()))
+        xml_tab_btn.resize(xml_tab_btn.sizeHint())
 
         db_label = QLabel('Выберите файл БД', self.centralWidget)
 
@@ -84,17 +106,22 @@ class MainWindow(QMainWindow):
         h1box.addWidget(zonx_btn)
 
         h2box = QHBoxLayout()
-        h2box.addWidget(zonxtodb_btn)
-        h2box.addStretch(1)
+        h2box.addWidget(self.xml_edit)
+        h2box.addWidget(xml_btn)
 
         h3box = QHBoxLayout()
-        h3box.addWidget(self.db_edit)
-        h3box.addWidget(db_btn)
+        h3box.addWidget(xml_tab_btn)
+        h3box.addWidget(zonxtodb_btn)
+        h3box.addStretch(1)
 
         h4box = QHBoxLayout()
-        h4box.addWidget(zonxtodb1_btn)
-        h4box.addWidget(dbtozonx1_btn)
-        h4box.addStretch(1)
+        h4box.addWidget(self.db_edit)
+        h4box.addWidget(db_btn)
+
+        h5box = QHBoxLayout()
+        h5box.addWidget(zonxtodb1_btn)
+        h5box.addWidget(dbtozonx1_btn)
+        h5box.addStretch(1)
 
         hbbox = QHBoxLayout()
         hbbox.addStretch(1)
@@ -103,11 +130,13 @@ class MainWindow(QMainWindow):
         vbox = QVBoxLayout()
         vbox.addWidget(zonx_label)
         vbox.addLayout(h1box)
-        vbox.addWidget(self.zonx_text)
+        vbox.addWidget(xml_label)
         vbox.addLayout(h2box)
-        vbox.addWidget(db_label)
+        vbox.addWidget(self.xml_text)
         vbox.addLayout(h3box)
+        vbox.addWidget(db_label)
         vbox.addLayout(h4box)
+        vbox.addLayout(h5box)
         vbox.addLayout(hbbox)
 
         self.centralWidget.setLayout(vbox)
@@ -128,9 +157,25 @@ class MainWindow(QMainWindow):
         else:
             event.ignore()
 
+    #Делаем красивую табуляцию и переоды строки
+    def xml_tabulation(elem, level=0):
+        i = "\n" + level*"\t"
+        if len(elem):
+            if not elem.text or not elem.text.strip():
+                elem.text = i + "\t"
+            if not elem.tail or not elem.tail.strip():
+                elem.tail = i
+            for elem in elem:
+                xml_tabulation(elem, level+1)
+            if not elem.tail or not elem.tail.strip():
+                elem.tail = i
+        else:
+            if level and (not elem.tail or not elem.tail.strip()):
+                elem.tail = i
+
 #Обработка события открытия файла зоны
     def openZonx(self):
-        fname = QFileDialog.getOpenFileName(self, 'Открыть zonx', os.getcwd(), "*.zonx") [0]
+        fname = QFileDialog.getOpenFileName(self, 'Открыть файл zonx', os.getcwd(), "*.zonx") [0]
         self.zonx_edit.setText(fname)
         try:
             f = open(fname, "r")
@@ -140,7 +185,22 @@ class MainWindow(QMainWindow):
 
         with f:
             data = f.read()
-            self.zonx_text.setText(data)
+            self.xml_text.setText(data)
+
+#Обработка события открытия файла зоны
+    def openXml(self):
+        fname = QFileDialog.getOpenFileName(self, 'Открыть файл xml', os.getcwd()) [0]
+        self.xml_edit.setText(fname)
+        try:
+            f = open(fname, "r")
+        except:
+            QMessageBox.critical(self, "Ошибка ", "Не выбран xml файл!", QMessageBox.Ok)
+            return
+
+        with f:
+            data = f.read()
+
+            self.xml_text.setText(data)
 
 #Обработка события открытия базы данных
     def openDB(self):
@@ -916,22 +976,6 @@ class MainWindow(QMainWindow):
 
 #Экспорт БД в файл .zonx_btn
     def DBToZonx(self):
-
-        #Делаем красивую табуляцию и переоды строки
-        def indent(elem, level=0):
-            i = "\n" + level*"\t"
-            if len(elem):
-                if not elem.text or not elem.text.strip():
-                    elem.text = i + "\t"
-                if not elem.tail or not elem.tail.strip():
-                    elem.tail = i
-                for elem in elem:
-                    indent(elem, level+1)
-                if not elem.tail or not elem.tail.strip():
-                    elem.tail = i
-            else:
-                if level and (not elem.tail or not elem.tail.strip()):
-                    elem.tail = i
 
         db_filename = self.db_edit.text()
 
@@ -1732,7 +1776,7 @@ class MainWindow(QMainWindow):
 
         tree = ET.ElementTree(zone)
 
-        indent(zone)
+        self.xml_tabulation(zone)
 
         zone_filename = os.path.splitext(db_filename)[0]
 
