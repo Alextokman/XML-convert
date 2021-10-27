@@ -1,0 +1,19 @@
+<?xml version='1.0' encoding='windows-1251'?>
+<n ver="1.1">
+	<n n="Spec" v="MAP_STRUCTURE" />
+	<n n="Ver" v="1.00" />
+	<n n="LAST_FREE_ID">
+		<n n="FilterId" v="3569" />
+		<n n="TextId" v="901980" />
+		<n n="LineId" v="58895" />
+		<n n="PolygonId" v="0" />
+		<n n="EllipseId" v="7184" />
+		<n n="AppLineId" v="9402" />
+		<n n="GroupId" v="1819735" />
+	</n>
+	<n n="MAP_STRUCTURE">
+		<n n="GRPP0" />
+		<n n="GRPP596" />
+		<n n="GRPP2386" />
+	</n>
+</n>

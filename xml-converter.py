@@ -6,6 +6,7 @@ from PyQt5.QtCore import QCoreApplication
 import datetime
 import xml.etree.ElementTree as ET
 import sqlite3
+import xml.dom.minidom
 
 class MainWindow(QMainWindow):
 
@@ -75,10 +76,9 @@ class MainWindow(QMainWindow):
         zonxtodb_btn = QPushButton('Импорт в новую БД', self.centralWidget)
         zonxtodb_btn.clicked.connect(self.ZonxToNewDB)
         zonxtodb_btn.resize(zonxtodb_btn.sizeHint())
-
-        xml_tab_btn = QPushButton('Красивая табуляция', self.centralWidget)
-#        xml_tab_btn.clicked.connect(self.xml_tabulation(self.xml_text.toPlainText()))
-        xml_tab_btn.resize(xml_tab_btn.sizeHint())
+        info_btn = QPushButton('Заполнить метки в зоне', self.centralWidget)
+        info_btn.clicked.connect(self.InfoFill)
+        info_btn.resize(info_btn.sizeHint())
 
         db_label = QLabel('Выберите файл БД', self.centralWidget)
 
@@ -92,9 +92,13 @@ class MainWindow(QMainWindow):
         zonxtodb1_btn.clicked.connect(self.ZonxToDB)
         zonxtodb1_btn.resize(zonxtodb1_btn.sizeHint())
 
-        dbtozonx1_btn = QPushButton('Экспорт из БД в zonx', self.centralWidget)
+        dbtozonx1_btn = QPushButton('Экспорт из БД в .zonx', self.centralWidget)
         dbtozonx1_btn.clicked.connect(self.DBToZonx)
         dbtozonx1_btn.resize(dbtozonx1_btn.sizeHint())
+
+        zontomap_btn = QPushButton('Создать файл .mapx', self.centralWidget)
+        zontomap_btn.clicked.connect(self.ZoneToMap)
+        zontomap_btn.resize(zontomap_btn.sizeHint())
 
         quit_btn = QPushButton('Выход', self.centralWidget)
         quit_btn.clicked.connect(self.close)
@@ -110,8 +114,8 @@ class MainWindow(QMainWindow):
         h2box.addWidget(xml_btn)
 
         h3box = QHBoxLayout()
-        h3box.addWidget(xml_tab_btn)
         h3box.addWidget(zonxtodb_btn)
+        h3box.addWidget(info_btn)
         h3box.addStretch(1)
 
         h4box = QHBoxLayout()
@@ -121,6 +125,7 @@ class MainWindow(QMainWindow):
         h5box = QHBoxLayout()
         h5box.addWidget(zonxtodb1_btn)
         h5box.addWidget(dbtozonx1_btn)
+        h5box.addWidget(zontomap_btn)
         h5box.addStretch(1)
 
         hbbox = QHBoxLayout()
@@ -188,7 +193,12 @@ class MainWindow(QMainWindow):
 
         with f:
             data = f.read()
-            self.xml_text.setText(data)
+            dom = xml.dom.minidom.parseString(data)
+            self.xml_text.setText(dom.toprettyxml())
+
+        with open(fname + "pretty", "wt") as f1:
+            f1.write(dom.toprettyxml())
+
         self.statusBar().showMessage('Готово')
 
 #Обработка события открытия базы данных
@@ -374,6 +384,17 @@ class MainWindow(QMainWindow):
                 "ID"	TEXT NOT NULL,
                 "Info"	TEXT,
                 "Type"	TEXT,
+                "Type01" TEXT,
+                "Type02" TEXT,
+                "Type03" TEXT,
+                "Type04" TEXT,
+                "Type05" TEXT,
+                "Type06" TEXT,
+                "Type07" TEXT,
+                "Type08" TEXT,
+                "Type09" TEXT,
+                "Type10" TEXT,
+                "Type11" TEXT,
                 "ListExBounds"	TEXT,
                 "ListTransferPointsIdx"	TEXT,
                 "Freq"	TEXT,
@@ -774,7 +795,20 @@ class MainWindow(QMainWindow):
                                     values = []
                                     values.append(tag3.attrib['n'].replace('r', ''))
                                     for tag4 in tag3.findall('n'):
-                                        if tag4.attrib['n'] == "4":#Собираем области секторов
+                                        if tag4.attrib['n'] == "3":
+                                            values.append(tag4.attrib['z'])
+                                            val = str(bin(int(tag4.attrib['z'])))
+                                            val = val[2:]
+                                            print(val)
+                                            for c in range(0,11):
+                                                values.append("0")
+                                                #if c > len(val):
+                                                #    values.append("0")
+                                                #else:
+                                                #    values.append(val[len(val)-c])
+
+
+                                        elif tag4.attrib['n'] == "4":#Собираем области секторов
                                             for tag5 in tag4.findall('n'):
                                                 values1 = []
                                                 values1.append(values[0])
@@ -805,7 +839,7 @@ class MainWindow(QMainWindow):
                                         else:
                                             values.append(tag4.attrib['z'])
                                     try:
-                                        cursor.execute("insert into FirUir values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?,?,?)", values)
+                                        cursor.execute("insert into FirUir values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", values)
                                         result = cursor.fetchall()
                                     except sqlite3.DatabaseError as err:
                                         print("Ошибка записи в таблицу БД FirUir:", err)
@@ -967,6 +1001,39 @@ class MainWindow(QMainWindow):
         db.close()
 
         self.db_edit.setText(db_filename)
+
+        self.statusBar().showMessage('Готово')
+
+#Заполнение полей Info для формирования подложки
+    def InfoFill(self):
+
+        self.statusBar().showMessage('Заполнение меток в зоне...')
+
+        db_filename = self.db_edit.text()
+
+        if not(os.path.isfile(db_filename)):
+            QMessageBox.critical(self, "Ошибка ", "Не удаётся найти файл БД", QMessageBox.Ok)
+            self.statusBar().showMessage('Готово')
+            return
+
+        try:
+            db = sqlite3.connect(db_filename)
+            cursor = db.cursor()
+        except:
+            QMessageBox.critical(self, "Ошибка ", "Не удаётся подключиться к БД", QMessageBox.Ok)
+            self.statusBar().showMessage('Готово')
+            return
+
+        #Заполняем сектора
+        cursor.execute("SELECT * from FirUir")
+        records = cursor.fetchall()
+        for row in records:
+            fir_id = str(row[2])
+            info = "*(info" + fir_id + ")"
+            cursor.execute("UPDATE FirUir SET Info = ? WHERE ID = ?", (info, fir_id))
+
+        db.commit()
+        db.close()
 
         self.statusBar().showMessage('Готово')
 
@@ -1805,6 +1872,103 @@ class MainWindow(QMainWindow):
         db.close()
         QMessageBox.information(self, "Информация ", "База данных успешно выгружена в файл " + zone_filename + ".zonx", QMessageBox.Ok)
         self.statusBar().showMessage('Готово')
+
+#Создание .mapx - файла
+    def ZoneToMap(self):
+        self.statusBar().showMessage('Выгрузка zonx из базы данных...')
+
+        #Делаем красивую табуляцию и переоды строки
+        def xml_tabulation(elem, level=0):
+            i = "\n" + level*"\t"
+            if len(elem):
+                if not elem.text or not elem.text.strip():
+                    elem.text = i + "\t"
+                if not elem.tail or not elem.tail.strip():
+                    elem.tail = i
+                for elem in elem:
+                    xml_tabulation(elem, level+1)
+                if not elem.tail or not elem.tail.strip():
+                    elem.tail = i
+            else:
+                if level and (not elem.tail or not elem.tail.strip()):
+                    elem.tail = i
+
+        db_filename = self.db_edit.text()
+
+        if not(os.path.isfile(db_filename)):
+            QMessageBox.critical(self, "Ошибка ", "Не удаётся найти файл БД", QMessageBox.Ok)
+            self.statusBar().showMessage('Готово')
+            return
+
+        try:
+            db = sqlite3.connect(db_filename)
+            cursor = db.cursor()
+        except:
+            QMessageBox.critical(self, "Ошибка ", "Не удаётся подключиться к БД", QMessageBox.Ok)
+            self.statusBar().showMessage('Готово')
+            return
+
+        zone = ET.Element('n')
+        zone.set('ver','1.1')
+
+        n2 = ET.SubElement(zone, 'n')
+        n2.set('n',"Spec")
+        n2.set('v',"MAP_STRUCTURE")
+
+        n2 = ET.SubElement(zone, 'n')
+        n2.set('n',"Ver")
+        n2.set('v',"1.00")
+
+        n2 = ET.SubElement(zone, 'n')
+        n2.set('n',"LAST_FREE_ID")
+
+        n3 = ET.SubElement(n2, 'n')
+        n3.set('n',"FilterId")
+        n3.set('v',"3569")
+        n3 = ET.SubElement(n2, 'n')
+        n3.set('n',"TextId")
+        n3.set('v',"901980")
+        n3 = ET.SubElement(n2, 'n')
+        n3.set('n',"LineId")
+        n3.set('v',"58895")
+        n3 = ET.SubElement(n2, 'n')
+        n3.set('n',"PolygonId")
+        n3.set('v',"0")
+        n3 = ET.SubElement(n2, 'n')
+        n3.set('n',"EllipseId")
+        n3.set('v',"7184")
+        n3 = ET.SubElement(n2, 'n')
+        n3.set('n',"AppLineId")
+        n3.set('v',"9402")
+        n3 = ET.SubElement(n2, 'n')
+        n3.set('n',"GroupId")
+        n3.set('v',"1819735")
+
+        n2 = ET.SubElement(zone, 'n')
+        n2.set('n',"MAP_STRUCTURE")
+
+        n3 = ET.SubElement(n2, 'n')
+        n3.set('n',"GRPP0")
+
+        n3 = ET.SubElement(n2, 'n')
+        n3.set('n',"GRPP596")
+
+        n3 = ET.SubElement(n2, 'n')
+        n3.set('n',"GRPP2386")
+
+        tree = ET.ElementTree(zone)
+
+        xml_tabulation(zone)
+
+        zone_filename = os.path.splitext(db_filename)[0]
+
+        tree.write(zone_filename + ".mapx", encoding="windows-1251", xml_declaration=True)
+
+        cursor.close()
+        db.close()
+        QMessageBox.information(self, "Информация ", "Подложка успешно выгружена в файл " + zone_filename + ".zonx", QMessageBox.Ok)
+        self.statusBar().showMessage('Готово')
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
